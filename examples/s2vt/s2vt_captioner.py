@@ -4,7 +4,7 @@ DEVICE_ID = 0
 
 from collections import OrderedDict
 import argparse
-import cPickle as pickle
+import _pickle as pickle
 import h5py
 import math
 import matplotlib.pyplot as plt
@@ -218,7 +218,7 @@ def all_video_gt_pairs(fsg):
       else:
         data[video_id] = [gt]
       prev_video_id = video_id
-    print 'Found %d videos with %d captions' % (len(data.keys()), len(data.values()))
+    print ('Found %d videos with %d captions' % (len(data.keys()), len(data.values())) )
   else:
     data = OrderedDict(((key, []) for key in fsg.vid_framefeats.keys()))
   return data
@@ -261,8 +261,8 @@ def run_pred_iters(pred_net, vidids, video_gt_pairs, fsg,
     if descriptor_video_id != video_id:
       # get fc7 feature for the video
       video_features = video_to_descriptor(video_id, fsg)
-      print 'Num video features: %d ' % len(video_features)
-      print 'Dimension of video features: {0}'.format(video_features[0].shape)
+      print ('Num video features: %d ' % len(video_features))
+      print ('Dimension of video features: {0}'.format(video_features[0].shape))
       # run lstm on all the frames of video before predicting
       encode_video_frames(pred_net, video_features)
       # use the last frame from the video as padding
@@ -285,8 +285,8 @@ def run_pred_iters(pred_net, vidids, video_gt_pairs, fsg,
         else:
           tag = 'Generated'
         stats = gen_stats(prob)
-        print '%s caption (length %d, log_p = %f, log_p_word = %f):\n%s' % \
-            (tag, stats['length'], stats['log_p'], stats['log_p_word'], caption_string)
+        print ('%s caption (length %d, log_p = %f, log_p_word = %f):\n%s' % \
+            (tag, stats['length'], stats['log_p'], stats['log_p_word'], caption_string))
   return outputs
 
 def to_html_row(columns, header=False):
@@ -407,10 +407,10 @@ def compute_descriptors(net, image_list, output_name='fc7'):
     batch_list = image_list[batch_start_index:(batch_start_index + batch_size)]
     for batch_index, image_path in enumerate(batch_list):
       batch[batch_index:(batch_index + 1)] = preprocess_image(net, image_path)
-    print 'Computing descriptors for images %d-%d of %d' % \
-        (batch_start_index, batch_start_index + batch_size - 1, len(image_list))
+    print ('Computing descriptors for images %d-%d of %d' % \
+        (batch_start_index, batch_start_index + batch_size - 1, len(image_list)))
     net.forward(data=batch)
-    print 'Done'
+    print ('Done')
     descriptors[batch_start_index:(batch_start_index + batch_size)] = \
         net.blobs[output_name].data
   return descriptors
@@ -476,7 +476,7 @@ def sample_captions(net, image_features,
         output_captions[index].append(next_word_sample)
         output_probs[index].append(net_output_probs[index, next_word_sample])
         if next_word_sample == 0: num_done += 1
-    print '%d/%d done after word %d' % (num_done, batch_size, caption_index)
+    print ('%d/%d done after word %d' % (num_done, batch_size, caption_index))
     caption_index += 1
   for prob, caption in zip(output_probs, output_captions):
     output = {}
@@ -501,7 +501,7 @@ def print_top_samples(vocab, samples, out_filename=None):
     image_id = os.path.split(image_path)[1]
     out_file.write("%s\t%s\n" % (image_id, vocab_inds_to_sentence(vocab, sample[0])))
   out_file.close()
-  print 'Wrote top samples to:', out_filename
+  print ('Wrote top samples to:', out_filename)
 
 def main():
   parser = argparse.ArgumentParser()
@@ -530,9 +530,9 @@ def main():
     caffe.set_device(DEVICE_ID)
   else:
     caffe.set_mode_cpu()
-  print "Setting up LSTM NET"
+  print ("Setting up LSTM NET")
   lstm_net = caffe.Net(LSTM_NET_FILE, MODEL_FILE, caffe.TEST)
-  print "Done"
+  print ("Done")
   nets = [lstm_net]
 
   STRATEGIES = [
@@ -555,7 +555,7 @@ def main():
           vocab_file, max_words=MAX_WORDS, align=aligned, shuffle=False,
           pad=aligned, truncate=aligned)
     video_gt_pairs = all_video_gt_pairs(fsg)
-    print 'Read %d videos pool feats' % len(fsg.vid_framefeats)
+    print ('Read %d videos pool feats' % len(fsg.vid_framefeats))
     NUM_CHUNKS = (len(fsg.vid_framefeats)/NUM_OUT_PER_CHUNK) + 1
     eos_string = '<EOS>'
     # add english inverted vocab 
@@ -584,8 +584,8 @@ def main():
         text_out_file.write(''.join(text_out_types[strat_type]))
         text_out_file.close()
       offset += NUM_OUT_PER_CHUNK
-      print '(%d-%d) Appending to file: %s' % (chunk_start, chunk_end,
-                                               text_out_fname)
+      print ('(%d-%d) Appending to file: %s' % (chunk_start, chunk_end,
+                                               text_out_fname))
 
 if __name__ == "__main__":
  main()
