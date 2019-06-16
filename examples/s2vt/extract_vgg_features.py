@@ -103,8 +103,8 @@ def compute_image_list_features(feature_extractor, images_file_path, out_file):
 
 def main():
   BASE_DIR = ''
-  IMAGE_LIST_FILE = 'images_paths_list.txt' # List of images 1 image path per line.
-  IMAGE_PATH = '../images/cat.jpg'
+  IMAGE_LIST_FILE = '../../../mocogan/ucfTrainTestlist/trainlist01.txt' # List of images 1 image path per line.
+  IMAGE_PATH = '../../../mocogan/resized_data'
   OUTPUT_FILE = 'output_features.csv'
   BATCH_SIZE = 10
 
