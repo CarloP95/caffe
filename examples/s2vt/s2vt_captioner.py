@@ -4,7 +4,7 @@ DEVICE_ID = 0
 
 from collections import OrderedDict
 import argparse
-import _pickle as pickle
+import pickle as pickle
 import h5py
 import math
 import matplotlib.pyplot as plt
@@ -13,7 +13,7 @@ import os
 import random
 import sys
 
-sys.path.append('../../python/')
+sys.path.append('../../py27/')
 import caffe
 
 from framefc7_text_to_hdf5_data import *
