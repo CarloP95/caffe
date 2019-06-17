@@ -2,11 +2,15 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 import sys
+import os
 
 sys.path.append('../../python/')
 import caffe
+
+#### Addition for UCF-101
+from glob import glob
+####
 
 class FeatureExtractor():
   def __init__(self, weights_path, image_net_proto, device_id=-1):
@@ -95,22 +99,35 @@ def compute_single_image_feature(feature_extractor, image_path, out_file):
   write_features_to_file([image_path], [feature], out_file)
 
 def compute_image_list_features(feature_extractor, images_file_path, out_file):
-  assert os.path.exists(images_file_path)
-  with open(images_file_path, 'r') as infd:
-    image_list = infd.read().splitlines()
+  assert os.path.exists(images_file_path[0])    #Check only for one
+  image_list = images_file_path                 #Changed implementation
   features = feature_extractor.compute_features(image_list)
   write_features_to_file(image_list, features, out_file)
 
 def main():
   BASE_DIR = ''
-  IMAGE_LIST_FILE = 'images_paths_list.txt' # List of images 1 image path per line.
+  
+  '''Populate IMAGE_LIST_FILE with all of the videos to convert'''
+  BASE_IMAGE_LIST_FILE = os.path.dirname(os.path.realpath(__file__))
+  
+  IMAGE_NET_FILE = BASE_IMAGE_LIST_FILE
+  MODEL_FILE = os.path.join(BASE_IMAGE_LIST_FILE, "snapshots")
+  
+  BASE_IMAGE_LIST_FILE = os.path.split(os.path.split(os.path.split(BASE_IMAGE_LIST_FILE)[0])[0])[0]
+  BASE_IMAGE_LIST_FILE = os.path.join(BASE_IMAGE_LIST_FILE, "mocogan", "raw_data")
+  
+  IMAGE_LIST_FILE = glob(os.path.join(BASE_IMAGE_LIST_FILE, "*", "*", "*"))
+  
   IMAGE_PATH = '../images/cat.jpg'
   OUTPUT_FILE = 'output_features.csv'
   BATCH_SIZE = 10
 
   # NOTE: Download these files from the Caffe Model Zoo.
-  IMAGE_NET_FILE = '../../models/vgg/vgg_orig_16layer.deploy.prototxt'
-  MODEL_FILE = BASE_DIR + 'Nets/vgg/VGG_ILSVRC_16_layers.caffemodel'
+  #IMAGE_NET_FILE = '../../models/vgg/vgg_orig_16layer.deploy.prototxt'
+  #MODEL_FILE = MODEL_FILE + 'Nets/vgg/VGG_ILSVRC_16_layers.caffemodel'
+  IMAGE_NET_FILE = os.path.join(IMAGE_NET_FILE, 's2vt.words_to_preds.deploy.prototxt')
+  MODEL_FILE = os.path.join(MODEL_FILE, 's2vt_vgg_rgb.caffemodel')
+  
   DEVICE_ID = 0
   feature_extractor = FeatureExtractor(MODEL_FILE, IMAGE_NET_FILE, DEVICE_ID)
   feature_extractor.set_image_batch_size(BATCH_SIZE)
