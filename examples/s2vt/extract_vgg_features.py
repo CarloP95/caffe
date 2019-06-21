@@ -116,7 +116,20 @@ def main():
   BASE_IMAGE_LIST_FILE = os.path.split(os.path.split(os.path.split(BASE_IMAGE_LIST_FILE)[0])[0])[0]
   BASE_IMAGE_LIST_FILE = os.path.join(BASE_IMAGE_LIST_FILE, "mocogan", "raw_data")
   
-  IMAGE_LIST_FILE = glob(os.path.join(BASE_IMAGE_LIST_FILE, "*", "*", "*"))
+  IMAGE_CLASSES = glob(os.path.join(BASE_IMAGE_LIST_FILE, "*", "*"))
+
+  imageClasses = []     # This will be populated with Image Classes
+
+  for image_path in IMAGE_CLASSES:
+      className = os.path.split(image_path)[1]
+      imageClasses.append(className)
+
+  imageClasses = list(dict.fromkeys(imageClasses))
+
+  # ### Comment Me
+  print(imageClasses)
+
+  IMAGE_LIST_FILE = glob(os.path.join(IMAGE_CLASSES, "*"))
   
   IMAGE_PATH = '../images/cat.jpg'
   OUTPUT_FILE = 'output_features.csv'
