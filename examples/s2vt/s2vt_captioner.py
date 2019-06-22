@@ -1,4 +1,4 @@
-DEVICE_ID = 0
+DEVICE_ID = -1
 
 """ Script to generate captions from video features"""
 
@@ -13,7 +13,7 @@ import os
 import random
 import sys
 
-sys.path.append('../../py27/')
+sys.path.append('../../python')
 import caffe
 
 from framefc7_text_to_hdf5_data import *
@@ -519,7 +519,7 @@ def main():
   DIR = './snapshots'
   VOCAB_FILE = './data/yt_coco_mvad_mpiimd_vocabulary.txt'
   FRAMEFEAT_FILE_PATTERN = './data/yt_allframes_vgg_fc7_{0}.txt'
- 
+  
   LSTM_NET_FILE = './s2vt.words_to_preds.deploy.prototxt'
   RESULTS_DIR = './results'
   MODEL_FILE = '%s/%s.caffemodel' % (DIR, args.modelname)

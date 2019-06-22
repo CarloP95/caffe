@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import os
+import cv2
 
 sys.path.append('../../python/')
 import caffe
@@ -13,7 +14,7 @@ from glob import glob
 ####
 
 class FeatureExtractor():
-  def __init__(self, weights_path, image_net_proto, device_id=-1):
+  def __init__(self,  weights_path, image_net_proto, device_id=-1):
     if device_id >= 0:
       caffe.set_mode_gpu()
       caffe.set_device(device_id)
@@ -21,6 +22,8 @@ class FeatureExtractor():
       caffe.set_mode_cpu()
     # Setup image processing net.
     phase = caffe.TEST
+    #load model into object net
+    # first parameter = path ptototxt file, second parameter = path caffemodel file, thrid parameter caffe.TEST
     self.image_net = caffe.Net(image_net_proto, weights_path, phase)
     image_data_shape = self.image_net.blobs['data'].data.shape
     self.transformer = caffe.io.Transformer({'data': image_data_shape})
@@ -104,6 +107,19 @@ def compute_image_list_features(feature_extractor, images_file_path, out_file):
   features = feature_extractor.compute_features(image_list)
   write_features_to_file(image_list, features, out_file)
 
+#def extract_frame(video_name, image_name):
+#  cap = cv2.VideoCapture(video_name)#devi passargli il path di ogni video
+#  i=0
+#  while(cap.isOpened()):
+#      ret, frame = cap.read()
+#      if ret == False:
+#          break
+#       cv2.imwrite(image_name+'_'+str(i)+'.jpg',frame)
+#       i+=1
+#
+#  cap.release()
+#  cv2.destroyAllWindows()
+   
 def main():
   BASE_DIR = ''
   
@@ -116,37 +132,58 @@ def main():
   BASE_IMAGE_LIST_FILE = os.path.split(os.path.split(os.path.split(BASE_IMAGE_LIST_FILE)[0])[0])[0]
   BASE_IMAGE_LIST_FILE = os.path.join(BASE_IMAGE_LIST_FILE, "mocogan", "raw_data")
   
-  IMAGE_CLASSES = glob(os.path.join(BASE_IMAGE_LIST_FILE, "*", "*"))
+  IMAGE_CLASSES = glob(os.path.join(BASE_IMAGE_LIST_FILE, "UCF-101", "*", "*"))
 
   imageClasses = []     # This will be populated with Image Classes
-
+  file = open("featureVideo.txt","w")
   for image_path in IMAGE_CLASSES:
       className = os.path.split(image_path)[1]
       imageClasses.append(className)
-
+      file.write(className + "\n")
+      cap = cv2.VideoCapture(image_path)#devi passargli il path di ogni video
+      i=0
+      while(cap.isOpened()):
+          ret, frame = cap.read()
+          if ret == False:
+              break
+          cv2.imwrite('video_frame/'+className+'_'+str(i)+'.jpg',frame)
+          i+=1
+      cap.release()
+      
+ 
+        
   imageClasses = list(dict.fromkeys(imageClasses))
-
+  file.close
+  cv2.destroyAllWindows()
   # ### Comment Me
   print(imageClasses)
-
-  IMAGE_LIST_FILE = glob(os.path.join(IMAGE_CLASSES, "*"))
   
-  IMAGE_PATH = '../images/cat.jpg'
+ 
+  
+  
+  
+  IMAGE_LIST_PATH = glob(os.path.join(IMAGE_CLASSES, "/"))
+  
+  #IMAGE_PATH = '../images/cat.jpg'
   OUTPUT_FILE = 'output_features.csv'
   BATCH_SIZE = 10
-
+  VIDEO_LIST_PATH = "featureVideo.txt"
   # NOTE: Download these files from the Caffe Model Zoo.
   #IMAGE_NET_FILE = '../../models/vgg/vgg_orig_16layer.deploy.prototxt'
   #MODEL_FILE = MODEL_FILE + 'Nets/vgg/VGG_ILSVRC_16_layers.caffemodel'
-  IMAGE_NET_FILE = os.path.join(IMAGE_NET_FILE, 's2vt.words_to_preds.deploy.prototxt')
-  MODEL_FILE = os.path.join(MODEL_FILE, 's2vt_vgg_rgb.caffemodel')
-  
-  DEVICE_ID = 0
-  feature_extractor = FeatureExtractor(MODEL_FILE, IMAGE_NET_FILE, DEVICE_ID)
+
+
+  #IMAGE_NET_FILE = os.path.join(IMAGE_NET_FILE, 's2vt.words_to_preds.deploy.prototxt')
+  #MODEL_FILE = os.path.join(MODEL_FILE, 's2vt_vgg_rgb.caffemodel')
+  IMAGE_NET_FILE = BASE_DIR+ 'vgg.deploy.prototxt'
+  MODEL_FILE = BASE_DIR+ 'snapshots/s2vt_vgg_rgb.caffemodel'  
+  DEVICE_ID = -1
+
+  feature_extractor = FeatureExtractor(MODEL_FILE,IMAGE_NET_FILE, DEVICE_ID)
   feature_extractor.set_image_batch_size(BATCH_SIZE)
 
   # compute features for a list of images in a file
-  compute_image_list_features(feature_extractor, IMAGE_LIST_FILE, OUTPUT_FILE)
+  compute_image_list_features(feature_extractor, IMAGE_CLASSES, OUTPUT_FILE)
   # compute features for a single image
   # feature_extractor.set_image_batch_size(1)
   # compute_single_image_feature(feature_extractor, IMAGE_PATH, OUTPUT_FILE)
