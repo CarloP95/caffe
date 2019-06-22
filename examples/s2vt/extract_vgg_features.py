@@ -114,8 +114,8 @@ def compute_image_list_features(feature_extractor, images_file_path, out_file):
 #      ret, frame = cap.read()
 #      if ret == False:
 #          break
-#       cv2.imwrite(image_name+'_'+str(i)+'.jpg',frame)
-#       i+=1
+#      cv2.imwrite('video_frame/'+image_name+'_'+str(i)+'.jpg',frame)
+#      i+=1
 #
 #  cap.release()
 #  cv2.destroyAllWindows()
@@ -132,37 +132,45 @@ def main():
   BASE_IMAGE_LIST_FILE = os.path.split(os.path.split(os.path.split(BASE_IMAGE_LIST_FILE)[0])[0])[0]
   BASE_IMAGE_LIST_FILE = os.path.join(BASE_IMAGE_LIST_FILE, "mocogan", "raw_data")
   
-  IMAGE_CLASSES = glob(os.path.join(BASE_IMAGE_LIST_FILE, "UCF-101", "*", "*"))
+  IMAGE_CLASSES = glob(os.path.join(BASE_IMAGE_LIST_FILE, "UCF-101", "*"))
+  VIDEO_PATH = glob(os.path.join(IMAGE_CLASSES, "*"))
 
-  imageClasses = []     # This will be populated with Image Classes
+
+  imageClasses = []     # This will be populated with Image Classes, this file is for input of Dataset
   file = open("featureVideo.txt","w")
   for image_path in IMAGE_CLASSES:
       className = os.path.split(image_path)[1]
       imageClasses.append(className)
       file.write(className + "\n")
-      cap = cv2.VideoCapture(image_path)#devi passargli il path di ogni video
+      
+        
+  imageClasses = list(dict.fromkeys(imageClasses))
+  file.close
+  
+  # ### Comment Me
+  print(imageClasses)
+  
+  #extract all videos' frame  
+  for video_path in VIDEO_PATH:
+      classVideo = os.path.splith(video_path)[1]
+      cap = cv2.VideoCapture(video_path) #pass video's path
       i=0
       while(cap.isOpened()):
           ret, frame = cap.read()
           if ret == False:
               break
-          cv2.imwrite('video_frame/'+className+'_'+str(i)+'.jpg',frame)
+          cv2.imwrite('video_frame/'+classVideo+'/'+classVideo+'_'+str(i)+'.jpg',frame)
           i+=1
       cap.release()
-      
+      cv2.destroyAllWindows()
  
-        
-  imageClasses = list(dict.fromkeys(imageClasses))
-  file.close
-  cv2.destroyAllWindows()
-  # ### Comment Me
-  print(imageClasses)
+  
   
  
   
   
   
-  IMAGE_LIST_PATH = glob(os.path.join(IMAGE_CLASSES, "/"))
+  IMAGE_LIST_PATH = glob(os.path.join(VIDEO_PATH, "/"))
   
   #IMAGE_PATH = '../images/cat.jpg'
   OUTPUT_FILE = 'output_features.csv'
