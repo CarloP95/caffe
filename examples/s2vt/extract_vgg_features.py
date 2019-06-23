@@ -190,7 +190,7 @@ def main():
                   cv2.imwrite(path_out + vid+'_'+str(count)+'.jpg',frame)
                   count+=1
               else:
-                  print("non sta funzionando na mazza!")
+                  print("Not working!")
                   break
           cap.release()
           cv2.destroyAllWindows()
