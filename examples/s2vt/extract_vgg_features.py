@@ -102,24 +102,40 @@ def compute_single_image_feature(feature_extractor, image_path, out_file):
   write_features_to_file([image_path], [feature], out_file)
 
 def compute_image_list_features(feature_extractor, images_file_path, out_file):
-  assert os.path.exists(images_file_path[0])    #Check only for one
+  assert os.path.exists(images_file_path[1])    #Check only for one
   image_list = images_file_path                 #Changed implementation
   features = feature_extractor.compute_features(image_list)
   write_features_to_file(image_list, features, out_file)
+'''
+def video_frame(video_name, image_name, videoList):
+  counter = 1
+  listVid = video_name
+  for vid in listVid:
+      vid = video_name + vid
+      cap = cv2.VideoCapture(vid) #pass video's path
+      try:
+          if not os.path.exists('video_frame'):
+              os.makedirs('video_frame')
+      except OSError:
+          print ('Error: Creating directory of video_frame')
+      i=0
+      counter+=1
+      while(True):
+          ret, frame = cap.read()
+          if ret:
+              name = './video_frame/'+image_name+'_'+str(i)+'.jpg'
+              print('Creating...'+name)
+              cv2.imwrite(name,frame)
+              i+=1
+          else:
+              break
 
-#def extract_frame(video_name, image_name):
-#  cap = cv2.VideoCapture(video_name)#devi passargli il path di ogni video
-#  i=0
-#  while(cap.isOpened()):
-#      ret, frame = cap.read()
-#      if ret == False:
-#          break
-#      cv2.imwrite('video_frame/'+image_name+'_'+str(i)+'.jpg',frame)
-#      i+=1
-#
-#  cap.release()
-#  cv2.destroyAllWindows()
-   
+
+      cap.release()
+      cv2.destroyAllWindows()
+ 
+
+'''
 def main():
   BASE_DIR = ''
   
@@ -133,15 +149,19 @@ def main():
   BASE_IMAGE_LIST_FILE = os.path.join(BASE_IMAGE_LIST_FILE, "mocogan", "raw_data")
   
   IMAGE_CLASSES = glob(os.path.join(BASE_IMAGE_LIST_FILE, "UCF-101", "*"))
-  VIDEO_PATH = glob(os.path.join(IMAGE_CLASSES, "*"))
+  VIDEO_PATH = glob(os.path.join(BASE_IMAGE_LIST_FILE, "UCF-101", "*","*"))
+  #IMAGE_LIST_PATH = glob(os.path.join(VIDEO_PATH, "/"))
+  
+  FRAME_PATH = os.path.join(BASE_IMAGE_LIST_FILE, "video_frame", "*")
+  
 
-
-  imageClasses = []     # This will be populated with Image Classes, this file is for input of Dataset
-  file = open("featureVideo.txt","w")
+  imageClasses = []     # This will be populated with Image Classes, this file is for output of Dataset
+  file = open("actionClass.txt","w")
   for image_path in IMAGE_CLASSES:
       className = os.path.split(image_path)[1]
       imageClasses.append(className)
       file.write(className + "\n")
+    
       
         
   imageClasses = list(dict.fromkeys(imageClasses))
@@ -150,32 +170,38 @@ def main():
   # ### Comment Me
   print(imageClasses)
   
-  #extract all videos' frame  
-  for video_path in VIDEO_PATH:
-      classVideo = os.path.splith(video_path)[1]
-      cap = cv2.VideoCapture(video_path) #pass video's path
-      i=0
-      while(cap.isOpened()):
-          ret, frame = cap.read()
-          if ret == False:
-              break
-          cv2.imwrite('video_frame/'+classVideo+'/'+classVideo+'_'+str(i)+'.jpg',frame)
-          i+=1
-      cap.release()
-      cv2.destroyAllWindows()
- 
+  for video_path in IMAGE_CLASSES:
+      path_out = os.path.join(IMAGE_NET_FILE, "video_frame")
+      #count = 0
+      path = os.listdir(video_path)
+      print(path)
+      for vid in path:
+          vid = os.path.join(video_path,vid)
+          print(vid)
+          cap = cv2.VideoCapture(vid)
+          count = 0
+          print(cap.isOpened())
+          while (cap.isOpened()):
+              print(cap)
+              ret, frame = cap.read()
+              print('read a new frame:', ret)
+              if ret :
+                  print('Creating...')
+                  cv2.imwrite(path_out + vid+'_'+str(count)+'.jpg',frame)
+                  count+=1
+              else:
+                  print("non sta funzionando na mazza!")
+                  break
+          cap.release()
+          cv2.destroyAllWindows()
+     
   
   
- 
   
   
-  
-  IMAGE_LIST_PATH = glob(os.path.join(VIDEO_PATH, "/"))
-  
-  #IMAGE_PATH = '../images/cat.jpg'
   OUTPUT_FILE = 'output_features.csv'
   BATCH_SIZE = 10
-  VIDEO_LIST_PATH = "featureVideo.txt"
+  #VIDEO_LIST_PATH = "featureVideo.txt"
   # NOTE: Download these files from the Caffe Model Zoo.
   #IMAGE_NET_FILE = '../../models/vgg/vgg_orig_16layer.deploy.prototxt'
   #MODEL_FILE = MODEL_FILE + 'Nets/vgg/VGG_ILSVRC_16_layers.caffemodel'
@@ -187,11 +213,11 @@ def main():
   MODEL_FILE = BASE_DIR+ 'snapshots/s2vt_vgg_rgb.caffemodel'  
   DEVICE_ID = -1
 
-  feature_extractor = FeatureExtractor(MODEL_FILE,IMAGE_NET_FILE, DEVICE_ID)
-  feature_extractor.set_image_batch_size(BATCH_SIZE)
+  #feature_extractor = FeatureExtractor(MODEL_FILE,IMAGE_NET_FILE, DEVICE_ID)
+  #feature_extractor.set_image_batch_size(BATCH_SIZE)
 
   # compute features for a list of images in a file
-  compute_image_list_features(feature_extractor, IMAGE_CLASSES, OUTPUT_FILE)
+  #compute_image_list_features(feature_extractor, FRAME_PATH, OUTPUT_FILE)
   # compute features for a single image
   # feature_extractor.set_image_batch_size(1)
   # compute_single_image_feature(feature_extractor, IMAGE_PATH, OUTPUT_FILE)
