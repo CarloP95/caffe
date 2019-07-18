@@ -4,6 +4,7 @@
 import csv
 import numpy as np
 import os
+import pickle
 import random
 random.seed(3)
 import sys
@@ -24,6 +25,7 @@ class fc7FrameSequenceGenerator(SequenceGenerator):
                truncate=True, reverse=False):
     self.max_words = max_words
     self.reverse = reverse
+    self.pickleDir = 'pickle/'
     self.lines = []
     num_empty_lines = 0
     self.vid_framefeats = {} # listofdict [{}]
@@ -32,13 +34,20 @@ class fc7FrameSequenceGenerator(SequenceGenerator):
       with open(framefeatfile, 'rb') as featfd:
         # each line has the fc7 for 1 frame in video
         pool_csv = csv.reader(featfd)
-        pool_csv = list(pool_csv)
-        for line in pool_csv:
+        #pool_csv = list(pool_csv) ## Out of Memory
+        for line in pool_csv: ## Out of Memory
           id_framenum = line[0]
-          video_id = id_framenum.split('_')[0]
+          #Change this line to retrieve correctly the video_id
+          video_id = id_framenum.rsplit('_', 1)[0]
           if video_id not in self.vid_framefeats:
             self.vid_framefeats[video_id]=[]
-          self.vid_framefeats[video_id].append(','.join(line[1:]))
+          # Additions to avoid Out Of Memory.
+          ### At least 40 GB of Disk space required
+          filename = self.pickleDir + video_id + '.pkl'
+          write_append_mode = 'w' if not os.path.isfile(filename) else 'a'
+          with open(filename, write_append_mode) as file:
+            pickle.dump(line[1:], file)
+          #self.vid_framefeats[video_id].append(','.join(line[1:]))
       if sentfile:
         print ('Reading sentences in: %s' % sentfile)
         with open(sentfile, 'r') as sentfd:
@@ -79,6 +88,7 @@ class fc7FrameSequenceGenerator(SequenceGenerator):
       random.shuffle(self.lines)
     self.pad = pad
     self.truncate = truncate
+    self.framefeatfile = framefeatfile
     self.negative_one_padded_streams = frozenset(('target_sentence'))
 
   def streams_exhausted(self):
@@ -175,7 +185,11 @@ class fc7FrameSequenceGenerator(SequenceGenerator):
 
 
   def float_line_to_stream(self, line):
-    return map(float, line.split(','))
+    
+    if isinstance(line, str):
+      return map(float, line.split(','))
+    else:
+      return map(float, line)
 
   def line_to_stream(self, sentence):
     stream = []
@@ -188,6 +202,18 @@ class fc7FrameSequenceGenerator(SequenceGenerator):
     # increment the stream -- 0 will be the EOS character
     stream = [s + 1 for s in stream]
     return stream
+
+  def getFeaturesOf(self, video_id):
+
+    if not video_id in self.vid_framefeats:
+      raise ValueError('Video id {0} is not present in fsg.vid_framefeats.')
+
+    filename = self.pickleDir + video_id + '.pkl'
+    features = None
+    with open(filename, 'r') as file:
+      features = pickle.load(file)
+
+    return features
 
   # we have pooled fc7 features already in the file
   def get_streams(self):

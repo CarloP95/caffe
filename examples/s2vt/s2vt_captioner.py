@@ -18,6 +18,7 @@ import caffe
 
 from framefc7_text_to_hdf5_data import *
 
+
 def vocab_inds_to_sentence(vocab, inds):
   sentence = ' '.join([vocab[i] for i in inds])
   # Capitalize first character.
@@ -32,7 +33,7 @@ def vocab_inds_to_sentence(vocab, inds):
 def video_to_descriptor(video_id, fsg):
   video_features = []
   assert video_id in fsg.vid_framefeats
-  all_frames_fc7 = fsg.vid_framefeats[video_id]
+  all_frames_fc7 = fsg.getFeaturesOf(video_id) #fsg.vid_framefeats[video_id]
   for frame_fc7 in all_frames_fc7:
     frame_fc7 = fsg.float_line_to_stream(frame_fc7)
     video_features.append(np.array(frame_fc7).reshape(1, len(frame_fc7)))
@@ -518,7 +519,7 @@ def main():
   # TODO: Input the snapshot directory, vocab path, frames (and sents) path
   DIR = './snapshots'
   VOCAB_FILE = './data/yt_coco_mvad_mpiimd_vocabulary.txt'
-  FRAMEFEAT_FILE_PATTERN = './data/yt_allframes_vgg_fc7_{0}.txt'
+  FEATURES_FILE = './data/features_file.txt'
   
   LSTM_NET_FILE = './s2vt.words_to_preds.deploy.prototxt'
   RESULTS_DIR = './results'
@@ -549,13 +550,13 @@ def main():
     DATASETS.append(('valid', 'val', False))
 
   for split_name, data_split_name, aligned in DATASETS:
-    filenames = [(FRAMEFEAT_FILE_PATTERN.format(data_split_name),
+    filenames = [(FEATURES_FILE,
                SENTS_FILE)]
     fsg = fc7FrameSequenceGenerator(filenames, BUFFER_SIZE,
           vocab_file, max_words=MAX_WORDS, align=aligned, shuffle=False,
           pad=aligned, truncate=aligned)
     video_gt_pairs = all_video_gt_pairs(fsg)
-    print ('Read %d videos pool feats' % len(fsg.vid_framefeats))
+    print ('Virtually read %d videos pool feats' % len(fsg.vid_framefeats))
     NUM_CHUNKS = (len(fsg.vid_framefeats)/NUM_OUT_PER_CHUNK) + 1
     eos_string = '<EOS>'
     # add english inverted vocab 
@@ -588,5 +589,6 @@ def main():
                                                text_out_fname))
 
 if __name__ == "__main__":
- main()
+    caffe.set_mode_gpu()
+    main()
 
