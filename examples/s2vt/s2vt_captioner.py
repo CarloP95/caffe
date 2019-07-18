@@ -381,7 +381,9 @@ def to_text_output(outputs, vocab):
           c['caption'], c['gt'], c['source'], c['stats']
       caption_string = vocab_inds_to_sentence(vocab, caption)
       source_meta = 'beam_size_%d' % source['beam_size']
-      out = '%s\t%s\t%s\n' % (source_meta, video_id,caption_string)
+      #out = '%s\t%s\t%s\n' % (source_meta, video_id,caption_string)
+      # Addition to modify the output to be the dataset that must be used.
+      out = '%s\t%s\n' % (video_id.split('_')[1], caption_string) 
       # if len(out_types[source_meta]) < num_videos:
       out_types[source_meta].append(out)
   return out_types
@@ -519,7 +521,10 @@ def main():
   # TODO: Input the snapshot directory, vocab path, frames (and sents) path
   DIR = './snapshots'
   VOCAB_FILE = './data/yt_coco_mvad_mpiimd_vocabulary.txt'
-  FEATURES_FILE = './data/features_file.txt'
+  FEATURES_FILE = 'Extract/data/[!feat]*'
+
+  from glob import glob 
+  FEATURES_FILES = glob(FEATURES_FILE)
   
   LSTM_NET_FILE = './s2vt.words_to_preds.deploy.prototxt'
   RESULTS_DIR = './results'
@@ -550,7 +555,7 @@ def main():
     DATASETS.append(('valid', 'val', False))
 
   for split_name, data_split_name, aligned in DATASETS:
-    filenames = [(FEATURES_FILE,
+    filenames = [(FEATURES_FILES,
                SENTS_FILE)]
     fsg = fc7FrameSequenceGenerator(filenames, BUFFER_SIZE,
           vocab_file, max_words=MAX_WORDS, align=aligned, shuffle=False,
@@ -589,6 +594,5 @@ def main():
                                                text_out_fname))
 
 if __name__ == "__main__":
-    caffe.set_mode_gpu()
     main()
 

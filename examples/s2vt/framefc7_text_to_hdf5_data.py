@@ -4,7 +4,7 @@
 import csv
 import numpy as np
 import os
-import pickle
+import csv
 import random
 random.seed(3)
 import sys
@@ -25,29 +25,25 @@ class fc7FrameSequenceGenerator(SequenceGenerator):
                truncate=True, reverse=False):
     self.max_words = max_words
     self.reverse = reverse
-    self.pickleDir = 'pickle/'
+    self.dataDir = 'Extract/data/'
     self.lines = []
     num_empty_lines = 0
     self.vid_framefeats = {} # listofdict [{}]
-    for framefeatfile, sentfile in filenames:
-      print ('Reading frame features from file: %s' % framefeatfile)
-      with open(framefeatfile, 'rb') as featfd:
-        # each line has the fc7 for 1 frame in video
-        pool_csv = csv.reader(featfd)
-        #pool_csv = list(pool_csv) ## Out of Memory
-        for line in pool_csv: ## Out of Memory
-          id_framenum = line[0]
-          #Change this line to retrieve correctly the video_id
-          video_id = id_framenum.rsplit('_', 1)[0]
-          if video_id not in self.vid_framefeats:
-            self.vid_framefeats[video_id]=[]
-          # Additions to avoid Out Of Memory.
-          ### At least 40 GB of Disk space required
-          filename = self.pickleDir + video_id + '.pkl'
-          write_append_mode = 'w' if not os.path.isfile(filename) else 'a'
-          with open(filename, write_append_mode) as file:
-            pickle.dump(line[1:], file)
-          #self.vid_framefeats[video_id].append(','.join(line[1:]))
+    for framefeatfiles, sentfile in filenames:
+      for idx, framefeatfile in enumerate(framefeatfiles):
+        print ('[%d/%d] Reading frame features from file: %s' % (idx, len(framefeatfiles), framefeatfile))
+        with open(framefeatfile, 'rb') as featfd:
+          # each line has the fc7 for 1 frame in video
+          pool_csv = csv.reader(featfd)
+          #pool_csv = list(pool_csv) ## Out of Memory
+          for line in pool_csv: ## Out of Memory
+            id_framenum = line[0]
+            #Change this line to retrieve correctly the video_id
+            video_id = id_framenum.rsplit('_', 1)[0]
+            if video_id not in self.vid_framefeats:
+              self.vid_framefeats[video_id]=[]
+            ### Avoid Out Of Memory, not to load into memory.            
+            #self.vid_framefeats[video_id].append(','.join(line[1:]))
       if sentfile:
         print ('Reading sentences in: %s' % sentfile)
         with open(sentfile, 'r') as sentfd:
@@ -208,10 +204,12 @@ class fc7FrameSequenceGenerator(SequenceGenerator):
     if not video_id in self.vid_framefeats:
       raise ValueError('Video id {0} is not present in fsg.vid_framefeats.')
 
-    filename = self.pickleDir + video_id + '.pkl'
-    features = None
+    filename = self.dataDir + video_id + '.txt'
+    features = []
     with open(filename, 'r') as file:
-      features = pickle.load(file)
+      pool_csv = csv.reader(file)
+      for line in pool_csv:
+        features.append(line[1:])
 
     return features
 
