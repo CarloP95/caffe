@@ -15,14 +15,15 @@ def extract_feats(filenames,batch_size):
             filenames:  List of filenames of videos to be processes
             batch_size: Batch size for feature extraction
        Writes features in .npy files"""
+
     model_file = './model/VGG_ILSVRC_16_layers.caffemodel'
     deploy_file = './model/VGG_ILSVRC_16_layers_deploy.prototxt'
     caffe.set_mode_gpu()
     net = caffe.Net(deploy_file,model_file,caffe.TEST)
     layer = 'fc7'
-    #mean_file = './ilsvrc_2012_mean.npy'
     transformer = caffe.io.Transformer({'data':net.blobs['data'].data.shape})
-    #transformer.set_mean('data',np.load(mean_file).mean(1).mean(1))
+    transformer.set_mean('data', [])
+    transformer.set_channel_swap('data', (2, 1, 0)) # BGR
     transformer.set_transpose('data',(2,0,1))
     transformer.set_raw_scale('data',255.0)
     net.blobs['data'].reshape(batch_size,3,224,224)
