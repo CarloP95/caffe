@@ -22,10 +22,12 @@ def extract_feats(filenames,batch_size):
     net = caffe.Net(deploy_file,model_file,caffe.TEST)
     layer = 'fc7'
     transformer = caffe.io.Transformer({'data':net.blobs['data'].data.shape})
-    transformer.set_mean('data', [])
+    channel_mean_values = [104, 117, 123]
+    channel_mean_values__UCF_101 = [100.99800554447337, 96.7195209000943, 89.63882431650443]
+    transformer.set_mean('data', channel_mean_values)
     transformer.set_channel_swap('data', (2, 1, 0)) # BGR
     transformer.set_transpose('data',(2,0,1))
-    transformer.set_raw_scale('data',255.0)
+    #transformer.set_raw_scale('data',255.0)
     net.blobs['data'].reshape(batch_size,3,224,224)
 
     saveDir = os.path.join(os.path.dirname(__file__), 'data')

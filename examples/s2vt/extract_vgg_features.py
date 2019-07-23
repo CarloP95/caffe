@@ -32,6 +32,7 @@ class FeatureExtractor():
     assert channel_mean.shape[0] == len(channel_mean_values)
     for channel_index, mean_val in enumerate(channel_mean_values):
       channel_mean[channel_index, ...] = mean_val
+    
     self.transformer.set_mean('data', channel_mean)
     self.transformer.set_channel_swap('data', (2, 1, 0)) # BGR
     self.transformer.set_transpose('data', (2, 0, 1))
@@ -102,6 +103,7 @@ def compute_single_image_feature(feature_extractor, image_path, out_file):
   write_features_to_file([image_path], [feature], out_file)
 
 def compute_image_list_features(feature_extractor, images_file_path, out_file):
+  print(images_file_path)
   assert os.path.exists(images_file_path[1])    #Check only for one
   image_list = images_file_path                 #Changed implementation
   features = feature_extractor.compute_features(image_list)
@@ -148,56 +150,25 @@ def main():
   BASE_IMAGE_LIST_FILE = os.path.split(os.path.split(os.path.split(BASE_IMAGE_LIST_FILE)[0])[0])[0]
   BASE_IMAGE_LIST_FILE = os.path.join(BASE_IMAGE_LIST_FILE, "mocogan", "raw_data")
   
-  IMAGE_CLASSES = glob(os.path.join(BASE_IMAGE_LIST_FILE, "UCF-101", "*"))
-  VIDEO_PATH = glob(os.path.join(BASE_IMAGE_LIST_FILE, "UCF-101", "*","*"))
-  #IMAGE_LIST_PATH = glob(os.path.join(VIDEO_PATH, "/"))
-  
-  FRAME_PATH = os.path.join(BASE_IMAGE_LIST_FILE, "video_frame", "*")
+  if (os.path.exists(os.path.join(BASE_IMAGE_LIST_FILE, "UCF-101"))):
+    IMAGE_CLASSES = glob(os.path.join(BASE_IMAGE_LIST_FILE, "UCF-101", "*"))
+    VIDEO_PATH = glob(os.path.join(BASE_IMAGE_LIST_FILE, "UCF-101", "*","*"))
+    
+  else:
+    IMAGE_CLASSES = glob(os.path.join(BASE_IMAGE_LIST_FILE, "*"))
+    VIDEO_PATH = glob(os.path.join(BASE_IMAGE_LIST_FILE, "*","*"))
+    
+  FRAME_PATH = glob(os.path.join(BASE_IMAGE_LIST_FILE, "video_frame", "*"))
   
 
   imageClasses = []     # This will be populated with Image Classes, this file is for output of Dataset
-  file = open("actionClass.txt","w")
   for image_path in IMAGE_CLASSES:
       className = os.path.split(image_path)[1]
       imageClasses.append(className)
-      file.write(className + "\n")
     
       
         
   imageClasses = list(dict.fromkeys(imageClasses))
-  file.close
-  
-  # ### Comment Me
-  print(imageClasses)
-  
-  for video_path in IMAGE_CLASSES:
-      path_out = os.path.join(IMAGE_NET_FILE, "video_frame")
-      #count = 0
-      path = os.listdir(video_path)
-      print(path)
-      for vid in path:
-          vid = os.path.join(video_path,vid)
-          print(vid)
-          cap = cv2.VideoCapture(vid)
-          count = 0
-          print(cap.isOpened())
-          while (cap.isOpened()):
-              print(cap)
-              ret, frame = cap.read()
-              print('read a new frame:', ret)
-              if ret :
-                  print('Creating...')
-                  cv2.imwrite(path_out + vid+'_'+str(count)+'.jpg',frame)
-                  count+=1
-              else:
-                  print("Not working!")
-                  break
-          cap.release()
-          cv2.destroyAllWindows()
-     
-  
-  
-  
   
   OUTPUT_FILE = 'output_features.csv'
   BATCH_SIZE = 10
@@ -213,11 +184,11 @@ def main():
   MODEL_FILE = BASE_DIR+ 'snapshots/s2vt_vgg_rgb.caffemodel'  
   DEVICE_ID = -1
 
-  #feature_extractor = FeatureExtractor(MODEL_FILE,IMAGE_NET_FILE, DEVICE_ID)
-  #feature_extractor.set_image_batch_size(BATCH_SIZE)
+  feature_extractor = FeatureExtractor(MODEL_FILE, IMAGE_NET_FILE, DEVICE_ID)
+  feature_extractor.set_image_batch_size(BATCH_SIZE)
 
   # compute features for a list of images in a file
-  #compute_image_list_features(feature_extractor, FRAME_PATH, OUTPUT_FILE)
+  compute_image_list_features(feature_extractor, FRAME_PATH, OUTPUT_FILE)
   # compute features for a single image
   # feature_extractor.set_image_batch_size(1)
   # compute_single_image_feature(feature_extractor, IMAGE_PATH, OUTPUT_FILE)
