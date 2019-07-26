@@ -10,7 +10,10 @@ sys.path.append('../../python/')
 import caffe
 
 #### Addition for UCF-101
+import skimage.transform
+
 from glob import glob
+from skvideo.io import vread
 ####
 
 class FeatureExtractor():
@@ -78,8 +81,11 @@ class FeatureExtractor():
     features = np.zeros(features_shape)
     for batch_start_index in range(0, len(image_list), batch_size):
       batch_list = image_list[batch_start_index:(batch_start_index + batch_size)]
-      for batch_index, image_path in enumerate(batch_list):
-        batch[batch_index:(batch_index + 1)] = self.preprocess_image(image_path)
+      for batch_index, video_path in enumerate(batch_list):
+        ## Extract a frame in video
+        images = extractFramesFromVideo(video_path)
+        batch[batch_index:(batch_index + 1)] = self.preprocess_image(images[0])
+
       current_batch_size = min(batch_size, len(image_list) - batch_start_index)
       print 'Computing features for images %d-%d of %d' % \
           (batch_start_index, batch_start_index + current_batch_size - 1,
@@ -87,7 +93,35 @@ class FeatureExtractor():
       self.image_net.forward(data=batch)
       features[batch_start_index:(batch_start_index + current_batch_size)] = \
           self.image_net.blobs[output_name].data[:current_batch_size]
+
+      if batch_start_index > 500:
+        break
+        
     return features
+
+
+def extractFramesFromVideo(video_path):
+  vid = vread(video_path)
+  curr_frames = []
+  for frame in vid:
+      #frame = skimage.transform.resize(frame,[224,224])
+      #if len(frame.shape)<3:
+      #    frame = np.repeat(frame,3).reshape([224,224,3])
+      curr_frames.append(frame)
+  curr_frames = np.array(curr_frames)
+  print ("Shape of frames: {0}".format(curr_frames.shape))
+  maxFrames = 80 if curr_frames.shape[0] >= 80 else int(curr_frames.shape[0] - 2)
+  idx = map(int,np.linspace(0,len(curr_frames)-1, maxFrames ))
+  idx = list(idx)
+
+  for indexToIterate, indexToExtract in enumerate(idx):
+      curr_frames[indexToIterate] = curr_frames[indexToExtract]
+      if indexToIterate == len(idx):
+          curr_frames = curr_frames[0: indexToIterate]
+
+  curr_frames = curr_frames[idx,:,:,:]
+  return curr_frames
+
 
 def write_features_to_file(image_list, features, output_file):
   with open(output_file, 'w') as opfd:
@@ -103,7 +137,6 @@ def compute_single_image_feature(feature_extractor, image_path, out_file):
   write_features_to_file([image_path], [feature], out_file)
 
 def compute_image_list_features(feature_extractor, images_file_path, out_file):
-  print(images_file_path)
   assert os.path.exists(images_file_path[1])    #Check only for one
   image_list = images_file_path                 #Changed implementation
   features = feature_extractor.compute_features(image_list)
@@ -156,17 +189,12 @@ def main():
     
   else:
     IMAGE_CLASSES = glob(os.path.join(BASE_IMAGE_LIST_FILE, "*"))
-    VIDEO_PATH = glob(os.path.join(BASE_IMAGE_LIST_FILE, "*","*"))
-    
-  FRAME_PATH = glob(os.path.join(BASE_IMAGE_LIST_FILE, "video_frame", "*"))
-  
+    VIDEO_PATH = glob(os.path.join(BASE_IMAGE_LIST_FILE, "*","*"))  
 
   imageClasses = []     # This will be populated with Image Classes, this file is for output of Dataset
   for image_path in IMAGE_CLASSES:
       className = os.path.split(image_path)[1]
       imageClasses.append(className)
-    
-      
         
   imageClasses = list(dict.fromkeys(imageClasses))
   
@@ -188,7 +216,7 @@ def main():
   feature_extractor.set_image_batch_size(BATCH_SIZE)
 
   # compute features for a list of images in a file
-  compute_image_list_features(feature_extractor, FRAME_PATH, OUTPUT_FILE)
+  compute_image_list_features(feature_extractor, VIDEO_PATH, OUTPUT_FILE)
   # compute features for a single image
   # feature_extractor.set_image_batch_size(1)
   # compute_single_image_feature(feature_extractor, IMAGE_PATH, OUTPUT_FILE)

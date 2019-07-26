@@ -24,10 +24,10 @@ def extract_feats(filenames,batch_size):
     transformer = caffe.io.Transformer({'data':net.blobs['data'].data.shape})
     channel_mean_values = [104, 117, 123]
     channel_mean_values__UCF_101 = [100.99800554447337, 96.7195209000943, 89.63882431650443]
-    transformer.set_mean('data', channel_mean_values)
+    transformer.set_mean('data', np.array(channel_mean_values))
     transformer.set_channel_swap('data', (2, 1, 0)) # BGR
     transformer.set_transpose('data',(2,0,1))
-    #transformer.set_raw_scale('data',255.0)
+    transformer.set_raw_scale('data',255.0)
     net.blobs['data'].reshape(batch_size,3,224,224)
 
     saveDir = os.path.join(os.path.dirname(__file__), 'data')
@@ -47,7 +47,7 @@ def extract_feats(filenames,batch_size):
             curr_frames.append(frame)
         curr_frames = np.array(curr_frames)
         print ("Shape of frames: {0}".format(curr_frames.shape))
-        maxFrames = 80 if curr_frames.shape[0] >= 80 else int(curr_frames.shape[0]/2)
+        maxFrames = 80 if curr_frames.shape[0] >= 80 else int(curr_frames.shape[0] - 2)
         idx = map(int,np.linspace(0,len(curr_frames)-1, maxFrames ))
         idx = list(idx)
 
@@ -98,6 +98,6 @@ if __name__ == '__main__':
     mocoganDir = os.path.join(text2videoGanDir, 'mocogan')
     dataDir = os.path.join(mocoganDir, 'raw_data')
 
-    videoNames =  sorted( glob(os.path.join(dataDir, '*', '*')) )
+    videoNames =  glob(os.path.join(dataDir, '*', '*'))
 
     extract_feats(videoNames, batch_size)
